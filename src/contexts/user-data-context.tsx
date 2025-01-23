@@ -1,6 +1,5 @@
 'use client';
 
-import { User } from '@/types/user';
 import {
   createContext,
   ReactNode,
@@ -8,6 +7,8 @@ import {
   useEffect,
   useState,
 } from 'react';
+import { User } from '@/types/user';
+import localCache from '@/utils/local-cache';
 
 interface UserDataContextProps {
   users: User[];
@@ -16,31 +17,6 @@ interface UserDataContextProps {
 }
 
 const USER_DATASET = 'myapp-users-dataset';
-
-const cacheData = (key: string) => {
-  const timeKey = `${key}-time`;
-  const now = Date.now();
-  return {
-    get: () => {
-      const cachedData = localStorage.getItem(key);
-      const cachedTime = localStorage.getItem(timeKey);
-      const cacheExpiry = 60 * 60 * 1000;
-      return cachedData &&
-        cachedTime &&
-        now - parseInt(cachedTime, 10) < cacheExpiry
-        ? cachedData
-        : null;
-    },
-    set: (data: unknown) => {
-      localStorage.setItem(key, JSON.stringify(data));
-      localStorage.setItem(timeKey, now.toString());
-    },
-    remove: () => {
-      localStorage.removeItem(key);
-      localStorage.removeItem(timeKey);
-    },
-  };
-};
 
 const UserDataContext = createContext<UserDataContextProps | undefined>(
   undefined
@@ -58,7 +34,7 @@ export default function UserDataProvider({
   useEffect(() => {
     const getUsers = async () => {
       try {
-        const userCache = cacheData(USER_DATASET);
+        const userCache = localCache(USER_DATASET);
         const cachedUserData = userCache.get();
         if (cachedUserData) {
           setUsers(JSON.parse(cachedUserData));
